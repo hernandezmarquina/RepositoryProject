@@ -1,117 +1,92 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
-  useColorScheme,
-  View,
 } from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+import {Colors} from 'react-native/Libraries/NewAppScreen';
+import {NetInfoStateType, useNetInfo} from '@react-native-community/netinfo';
+import MovieRepository from './src/repository/movie';
+import {IMovieModel} from './src/types';
+import MovieCard from './src/components/MovieCard';
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+const App = () => {
+  const {type, isConnected} = useNetInfo();
+  const [movies, setMovies] = useState<IMovieModel[]>([]);
+  const [source, setSource] = useState<string | undefined>();
+  const [loading, setLoading] = useState<boolean>(false);
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+  const getMovies = async (hasConnection: boolean, isWifi: boolean) => {
+    // Create a new instance of the repository
+    const repository = new MovieRepository(hasConnection, isWifi);
+    setSource(repository.dataSource.sourceType);
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+    // Clear the list
+    setMovies(() => []);
+    // Show the loading indicator
+    setLoading(() => true);
+    // Simulate a delay of 1s
+    setTimeout(async () => {
+      const results = await repository.getMovieList();
+      setMovies(results);
+      // Hide the loading indicator
+      setLoading(() => false);
+    }, 1000);
   };
 
+  useEffect(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      getMovies(isConnected === true, type === NetInfoStateType.wifi);
+    }, 1000); // 1s de debounce
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [type, isConnected]);
+
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle={'dark-content'} backgroundColor={Colors.light} />
+      <Text style={styles.title}>
+        {source ? `Movies from: ${source}` : 'Loading...'}
+      </Text>
+      {source && loading && (
+        <Text style={styles.subtitle}>{`Loading from ${source}...`}</Text>
+      )}
+      <ScrollView contentInsetAdjustmentBehavior="automatic">
+        {movies.map(movie => (
+          <MovieCard key={movie.id} {...movie} />
+        ))}
       </ScrollView>
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  container: {
+    flex: 1,
+    backgroundColor: Colors.light,
   },
-  sectionTitle: {
+  title: {
     fontSize: 24,
-    fontWeight: '600',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginVertical: 20,
   },
-  sectionDescription: {
-    marginTop: 8,
+  subtitle: {
     fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginVertical: 10,
   },
 });
 
