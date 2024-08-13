@@ -1,8 +1,6 @@
 import {IMovieMMKV, IMovieSource} from './types';
 import {MMKV} from 'react-native-mmkv';
 
-const MOVIES_KEY = 'movies';
-
 class MMKVSource implements IMovieSource<IMovieMMKV[]> {
   storage: MMKV;
 
@@ -11,11 +9,11 @@ class MMKVSource implements IMovieSource<IMovieMMKV[]> {
   }
 
   async getMovies(): Promise<IMovieMMKV[]> {
-    const results = this.storage.getString(MOVIES_KEY);
+    const results = this.storage.getString('movies');
     return results ? (JSON.parse(results) as IMovieMMKV[]) : [];
   }
   async saveMovies(movies: IMovieMMKV[]): Promise<void> {
-    this.storage.set(MOVIES_KEY, JSON.stringify(movies));
+    this.storage.set('movies', JSON.stringify(movies));
   }
 }
 

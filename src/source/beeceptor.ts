@@ -1,14 +1,12 @@
 import axios, {AxiosInstance, AxiosResponse} from 'axios';
 import {IMovieBeeceptor, IMovieSource} from './types';
 
-const BASE_URL = 'https://movies.free.beeceptor.com';
-
 class BeeceptorSource implements IMovieSource<IMovieBeeceptor[]> {
   axios: AxiosInstance;
 
   constructor() {
     this.axios = axios.create({
-      baseURL: BASE_URL,
+      baseURL: 'https://movies.free.beeceptor.com',
     });
   }
 

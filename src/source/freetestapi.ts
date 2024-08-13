@@ -1,13 +1,11 @@
 import axios, {AxiosInstance, AxiosResponse} from 'axios';
 import {IMovieFreetestapi, IMovieSource} from './types';
 
-const BASE_URL = 'https://freetestapi.com/api/v1';
-
 class FreeTestApiSource implements IMovieSource<IMovieFreetestapi[]> {
   axios: AxiosInstance;
   constructor() {
     this.axios = axios.create({
-      baseURL: BASE_URL,
+      baseURL: 'https://freetestapi.com/api/v1',
     });
   }
   async getMovies(): Promise<IMovieFreetestapi[]> {
